@@ -17,14 +17,16 @@ sudo pip install celery pymediainfo
 
 follow instructions given at http://celery.readthedocs.org/en/latest/tutorials/daemonizing.html#generic-init-scripts
 
-### Configuration ###
+### Configuration ### The settings file is no more used
+
+An example of command to launch the code is located in "Mycommand.txt"
 
 configuration options are in the settings.py file. You can configure the broker url and default output dir
 
 ```python
     BROKER_URL = 'amqp://guest:guest@172.16.1.1' #connection to the message broker
     CELERY_RESULT_BACKEND = 'amqp://guest:guest@172.16.1.1' #that's to connect to result backend
-    config = {"folder_out": "/home/nicolas/output", #where the files should be writt en
+    config = {"folder_out": "/home/nicolas/output", #no more used
         "bitrates_size_dict": {100: 100, 200:200}} # what king of transcoding should be done
 ```
 
