@@ -1,0 +1,1 @@
+sudo python -c 'import adaptation.commons ; adaptation.commons.ddo("adaptation/mavideo.mp4","home/utilisateur/Documents/Projet/Resultats",0,500,750,1001,1,700,480,5)'
