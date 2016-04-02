@@ -1,1 +1,0 @@
-# vhg-adaptation-worker-projet-s8
