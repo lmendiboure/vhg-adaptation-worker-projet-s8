@@ -28,7 +28,7 @@ from pymediainfo import MediaInfo
 from lxml import etree as LXML
 
 # context helpers
-from context import get_transcoded_folder, get_transcoded_file, get_dash_folder, get_dash_mpd_file_path, get_yuv_file, get_description_folder, get_mp4_description_folder, get_zip_folder, get_dash_mpd_file_folder, get_postProcessor_path,get_welsenc_path,get_layer_path, get_plus_description_folder,get_plus_mp4_description_folder, get_plus_dash_folder, get_plus_dash_mpd_file_folder,get_plus_dash_mpd_file_path, get_plus_zip_folder
+from context import get_transcoded_folder, get_transcoded_file, get_dash_folder, get_dash_mpd_file_path, get_yuv_file, get_description_folder, get_mp4_description_folder, get_description_zip_folder, get_dash_mpd_file_folder, get_postProcessor_path,get_welsenc_path,get_layer_path, get_plus_description_folder,get_plus_mp4_description_folder, get_plus_dash_folder, get_plus_dash_mpd_file_path, get_description_plus_zip_folder, get_mpd_zip_folder
 
 # main app for celery, configuration is in separate settings.ini file
 app = Celery('tasks')
@@ -164,9 +164,10 @@ def encode_workflow(self, src, dest, videoID, inform, lowBitrate, midBitrate, hi
     context = create_descriptions(context)
     context = create_mp4_description(context)
     context = chunk_dash(context, segtime=4) #Warning : segtime is already set in transcode.s(), but not in the same context
-    context = create_zip(context)
+    context = create_description_zip(context)
+    context = create_mpd_zip(context)
     clean_useless_folders(context)
-    context = send_the_videoID(context)
+    #context = send_the_videoID(context)
     #context = edit_dash_playlist(context)
     #notify.s(complete=True, main_task_id=main_task_id))
     #if (int(inform) == 1): # If this value is equal to 1 it means that all the videos have been transcoded : the manager is informed
@@ -301,9 +302,6 @@ def chunk_dash(*args, **kwargs):
 	if not os.path.exists(get_dash_mpd_file_folder(context)):
 		os.makedirs(get_dash_mpd_file_folder(context))
 
-	#if not os.path.exists(get_plus_dash_mpd_file_folder(context)):
-        #	os.makedirs(get_plus_dash_mpd_file_folder(context))
-
 	while i<=int(context["desNum"]):	
 		if not os.path.exists(get_dash_folder(context,i)):
 			os.makedirs(get_dash_folder(context,i))
@@ -329,16 +327,16 @@ def chunk_dash(*args, **kwargs):
 	k=1
 	while k<=int(context["desNum"]):
 		shutil.move(get_dash_mpd_file_path(context,k),get_dash_mpd_file_folder(context))
-		#shutil.move(get_plus_dash_mpd_file_path(context,k),get_plus_dash_mpd_file_folder(context))   
+		#shutil.move(get_plus_dash_mpd_file_path(context,k),get_dash_mpd_file_folder(context))   
 		k+=1
 	return context
 
-def  create_zip(*args):
+def create_description_zip(*args):
 	context = args[0]	
 	i = 1;
 	while i<=int(context["desNum"]):
-		zip_file = zipfile.ZipFile(get_zip_folder(context,i), 'w', zipfile.ZIP_DEFLATED)
-		#zip_file_plus = zipfile.ZipFile(get_plus_zip_folder(context,i), 'w', zipfile.ZIP_DEFLATED)
+		zip_file = zipfile.ZipFile(get_description_zip_folder(context,i), 'w', zipfile.ZIP_DEFLATED)
+		#zip_file_plus = zipfile.ZipFile(get_description_plus_zip_folder(context,i), 'w', zipfile.ZIP_DEFLATED)
 	   	files_in = [os.path.join(get_dash_folder(context,i),f) for f in os.listdir(get_dash_folder(context,i))]
 		#files_in_plus = [os.path.join(get_plus_dash_folder(context,i),f) for f in os.listdir(get_plus_dash_folder(context,i))]
 		for j in range(0,len(files_in)):
@@ -347,6 +345,14 @@ def  create_zip(*args):
 		i+=1
 	return context
 
+def create_mpd_zip(*args):
+	context = args[0]
+	zip_file = zipfile.ZipFile(get_mpd_zip_folder(context), 'w', zipfile.ZIP_DEFLATED)
+	files_in = [os.path.join(get_dash_mpd_file_folder(context),f) for f in os.listdir(get_dash_mpd_file_folder(context))]
+	for j in range(0,len(files_in)):
+		zip_file.write(files_in[j],os.path.basename(files_in[j]))
+
+	return context
 @app.task
 def edit_dash_playlist(*args, **kwards):
     '''
@@ -379,25 +385,6 @@ def edit_dash_playlist(*args, **kwards):
 
 
 @app.task
-# def add_playlist_footer(playlist_folder):
-def clean_useless_folders(*args):
-	'''
-	delete encoding folder
-	'''
-	# print args, kwargs
-	context = args[0]
-	shutil.rmtree(get_transcoded_folder(context))
-	shutil.rmtree(get_description_folder(context))
-	#shutil.rmtree(get_plus_description_folder(context))
-	i = 1;
-	while i<=int(context["desNum"]):
-		shutil.rmtree(get_mp4_description_folder(context,i))
-		shutil.rmtree(get_dash_folder(context,i))
-		#shutil.rmtree(get_plus_mp4_description_folder(context,i))
-		#shutil.rmtree(get_plus_dash_folder(context,i))
-		i +=1
-
-@app.task
 def send_the_videoID(*args):
 	context = args[0]
 	httpServ = httplib.HTTPConnection("127.0.0.1", 8081)
@@ -410,4 +397,25 @@ def inform_the_manager(*args):
 	httpServ = httplib.HTTPConnection("127.0.0.1", 8081)
 	httpServ.connect()
 	httpServ.request('POST', '/api/manager/transco/', "OK")
+
+
+@app.task
+# def add_playlist_footer(playlist_folder):
+def clean_useless_folders(*args):
+	'''
+	delete encoding folder
+	'''
+	# print args, kwargs
+	context = args[0]
+	shutil.rmtree(get_transcoded_folder(context))
+	shutil.rmtree(get_description_folder(context))
+	shutil.rmtree(get_dash_mpd_file_folder(context))
+	#shutil.rmtree(get_plus_description_folder(context))
+	i = 1;
+	while i<=int(context["desNum"]):
+		shutil.rmtree(get_mp4_description_folder(context,i))
+		shutil.rmtree(get_dash_folder(context,i))
+		#shutil.rmtree(get_plus_mp4_description_folder(context,i))
+		#shutil.rmtree(get_plus_dash_folder(context,i))
+		i +=1
 
