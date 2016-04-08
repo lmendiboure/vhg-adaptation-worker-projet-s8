@@ -69,7 +69,10 @@ here's a description on how the encoding workflow tasks work. Some long stating 
                                                                                                  | 
                                                                                          ________|____________
                                                                                         | CREATE DESCRIPTIONS |
-                                                                                        |_____________________|                                                                                                 ________________|_________________          
+                                                                                        |_____________________|     
+                                                                                                 |
+                                                                                                 |
+                                                                                _________________|_________________          
                                                                                 |       For each description        \
                                                                                 |                                   |\
                                                                                 |       _____________________       | \
@@ -96,8 +99,12 @@ here's a description on how the encoding workflow tasks work. Some long stating 
                                                                                         _______|_________________
                                                                                         | DELETE USELESS FOLDERS |
                                                                                         |________________________|
-
-
+                                                                                               |
+                                                                                               |
+                                                                                               |
+                                                                                        _______|_________________
+                                                                                        |   NOTIFICATION         |
+                                                                                        |________________________|
 ## Notifications ##
 
 A notification task, which is passed the highest level task_id, is called when required and update the status, which triggers a json message sent to the result backend. A consumer should listen to the queue named after the task_id given at creation time
