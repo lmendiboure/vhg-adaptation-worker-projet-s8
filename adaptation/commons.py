@@ -17,6 +17,9 @@ sys.path.append(os.path.abspath("adaptation"))
 # celery import
 from celery import Celery, chord
 
+# config import
+from settings import config
+
 # media info wrapper import
 from pymediainfo import MediaInfo
 
@@ -86,7 +89,7 @@ def notify(*args, **kwargs):
 def image_processing(src, dest):
     print "(------------"
     random_uuid = uuid.uuid4().hex
-    context={"original_file": src, "folder_out":"/"+ dest + "/", "id": random_uuid}
+    context={"original_file": src, "folder_out":config["folder_out"]+ dest + "/", "id": random_uuid}
     
     if not os.path.exists(context['folder_out']):
         os.makedirs(context['folder_out'])
@@ -149,7 +152,7 @@ def encode_workflow(self, src, dest, videoID, inform, lowBitrate, midBitrate, hi
     print "(------------"
     print main_task_id
     random_uuid = uuid.uuid4().hex
-    context={"original_file": src, "folder_out":"/"+ dest, "inform":inform, "videoID":videoID, "id": random_uuid, "bitrateList":{lowBitrate,midBitrate,highBitrate}, "lowBitrate":lowBitrate,"midBitrate":midBitrate,"highBitrate":highBitrate, "targetBitrate": targetBitrate, "resolution":resolution, "desNum": desNum, "changeFrameRate":changeFrameRate,"managerAddr":managerAddr,"managerPort":managerPort,"managerEndpoint":managerEndpoint}
+    context={"original_file": src, "folder_out":config["folder_out"]+ dest, "inform":inform, "videoID":videoID, "id": random_uuid, "bitrateList":{lowBitrate,midBitrate,highBitrate}, "lowBitrate":lowBitrate,"midBitrate":midBitrate,"highBitrate":highBitrate, "targetBitrate": targetBitrate, "resolution":resolution, "desNum": desNum, "changeFrameRate":changeFrameRate,"managerAddr":managerAddr,"managerPort":managerPort,"managerEndpoint":managerEndpoint}
     if os.path.exists(context['folder_out']):
     	shutil.rmtree(context["folder_out"])
     context = get_video_size(context=context)
@@ -163,7 +166,7 @@ def encode_workflow(self, src, dest, videoID, inform, lowBitrate, midBitrate, hi
     context = create_description_zip(context)
     context = create_mpd_zip(context)
     #clean_useless_folders(context)
-    #context = send_the_videoID(context)
+    context = send_the_videoID(context)
     #context = edit_dash_playlist(context)
     #notify.s(complete=True, main_task_id=main_task_id))
     #if (int(inform) == 1): # If this value is equal to 1 it means that all the videos have been transcoded : the manager is informed
