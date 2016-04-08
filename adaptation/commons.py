@@ -12,11 +12,7 @@ import httplib
 import requests
 
 # Need to be changed, add the adaptation folder directory to the system path
-sys.path.append('/Documents/Projet/vhg-adaptation-worker-master/adaptation')
-
-
-# config import
-from settings import config
+sys.path.append(os.path.abspath("adaptation"))
 
 # celery import
 from celery import Celery, chord
@@ -90,7 +86,7 @@ def notify(*args, **kwargs):
 def image_processing(src, dest):
     print "(------------"
     random_uuid = uuid.uuid4().hex
-    context={"original_file": src, "folder_out": config["folder_out"] + dest + "/", "id": random_uuid}
+    context={"original_file": src, "folder_out":"/"+ dest + "/", "id": random_uuid}
     
     if not os.path.exists(context['folder_out']):
         os.makedirs(context['folder_out'])
@@ -138,9 +134,9 @@ def image_processing(src, dest):
 
 
 @app.task()
-def ddo(src, dest, videoID, inform, lowBitrate,midBitrate, highBitrate, changeFrameRate, targetBitrate, resolution, desNum):
+def ddo(src, dest, videoID, inform, lowBitrate,midBitrate, highBitrate, changeFrameRate, targetBitrate, resolution, desNum,managerAddr,managerPort,managerEndpoint):
     try:
-        encode_workflow(src, dest, videoID, inform, lowBitrate, midBitrate, highBitrate, changeFrameRate, targetBitrate, resolution, desNum)
+        encode_workflow(src, dest, videoID, inform, lowBitrate, midBitrate, highBitrate, changeFrameRate, targetBitrate, resolution, desNum,managerAddr,managerPort,managerEndpoint)
     except:
         print "Error while encoding_workflow"
         raise
@@ -148,12 +144,12 @@ def ddo(src, dest, videoID, inform, lowBitrate,midBitrate, highBitrate, changeFr
 
 
 @app.task(bind=True)
-def encode_workflow(self, src, dest, videoID, inform, lowBitrate, midBitrate, highBitrate, changeFrameRate, targetBitrate, resolution, desNum):
+def encode_workflow(self, src, dest, videoID, inform, lowBitrate, midBitrate, highBitrate, changeFrameRate, targetBitrate, resolution, desNum,managerAddr,managerPort,managerEndpoint):
     main_task_id = self.request.id
     print "(------------"
     print main_task_id
     random_uuid = uuid.uuid4().hex
-    context={"original_file": src, "folder_out": config["folder_out"] + dest, "inform":inform, "videoID":videoID, "id": random_uuid, "bitrateList":{lowBitrate,midBitrate,highBitrate}, "lowBitrate":lowBitrate,"midBitrate":midBitrate,"highBitrate":highBitrate, "targetBitrate": targetBitrate, "resolution":resolution, "desNum": desNum, "changeFrameRate":changeFrameRate}
+    context={"original_file": src, "folder_out":"/"+ dest, "inform":inform, "videoID":videoID, "id": random_uuid, "bitrateList":{lowBitrate,midBitrate,highBitrate}, "lowBitrate":lowBitrate,"midBitrate":midBitrate,"highBitrate":highBitrate, "targetBitrate": targetBitrate, "resolution":resolution, "desNum": desNum, "changeFrameRate":changeFrameRate,"managerAddr":managerAddr,"managerPort":managerPort,"managerEndpoint":managerEndpoint}
     if os.path.exists(context['folder_out']):
     	shutil.rmtree(context["folder_out"])
     context = get_video_size(context=context)
@@ -166,8 +162,8 @@ def encode_workflow(self, src, dest, videoID, inform, lowBitrate, midBitrate, hi
     context = chunk_dash(context, segtime=4) #Warning : segtime is already set in transcode.s(), but not in the same context
     context = create_description_zip(context)
     context = create_mpd_zip(context)
-    clean_useless_folders(context)
-    context = send_the_videoID(context)
+    #clean_useless_folders(context)
+    #context = send_the_videoID(context)
     #context = edit_dash_playlist(context)
     #notify.s(complete=True, main_task_id=main_task_id))
     #if (int(inform) == 1): # If this value is equal to 1 it means that all the videos have been transcoded : the manager is informed
@@ -216,12 +212,9 @@ def get_video_thumbnail(*args, **kwargs):
     if not os.path.exists(context['folder_out']):
         os.makedirs(context['folder_out'])
 
-    ffargs = "ffmpeg -i " + context["original_file"] + " -vcodec mjpeg -vframes 1 -an -f rawvideo -s 426x240 -ss 10 "+ context["folder_out"] + "/thumbnail.jpg"
+    ffargs = "ffmpeg -i " + context["original_file"] + " -vcodec mjpeg -vframes 1 -an -f rawvideo -ss `ffmpeg -i " + context["original_file"] + " 2>&1 | grep Duration | awk '{print $2}' | tr -d , | awk -F ':' '{print $3/2}'` " + context["folder_out"] + "/thumbnail.jpg"
     print ffargs
     run_background(ffargs)
-    #url = 'http://127.0.0.0:8081:/api/manager/transco'
-    #files = {'media': open(context["folder_out"]+"/thumbnail.jpg", 'rb')}
-    #response = requests.post(url, files=files)
     return context
 
 @app.task
@@ -387,16 +380,16 @@ def edit_dash_playlist(*args, **kwards):
 @app.task
 def send_the_videoID(*args):
 	context = args[0]
-	httpServ = httplib.HTTPConnection("127.0.0.1", 8081)
+	httpServ = httplib.HTTPConnection(context["managerAddr"], context["managerPort"])
 	httpServ.connect()
-	httpServ.request('POST', '/api/manager/transco/', context["videoID"])
+	httpServ.request('POST', context["managerEndpoint"], context["videoID"])
 
 @app.task 
 def inform_the_manager(*args):
 	context = args[0]
-	httpServ = httplib.HTTPConnection("127.0.0.1", 8081)
+	httpServ = httplib.HTTPConnection(context["managerAddr"], context["managerPort"])
 	httpServ.connect()
-	httpServ.request('POST', '/api/manager/transco/', "OK")
+	httpServ.request('POST', context["managerEndpoint"], "OK")
 
 
 @app.task
@@ -413,7 +406,7 @@ def clean_useless_folders(*args):
 	#shutil.rmtree(get_plus_description_folder(context))
 	i = 1;
 	while i<=int(context["desNum"]):
-		shutil.rmtree(get_mp4_description_folder(context,i))
+		#shutil.rmtree(get_mp4_description_folder(context,i))
 		shutil.rmtree(get_dash_folder(context,i))
 		#shutil.rmtree(get_plus_mp4_description_folder(context,i))
 		#shutil.rmtree(get_plus_dash_folder(context,i))
