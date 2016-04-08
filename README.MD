@@ -1,4 +1,4 @@
-# encoding_workflow #
+# Encoding Workflow #
 
 The project is composed from various celery tasks in the adaptation python package. One should only call high level task encoding_workflow in the commons.py module. An example of use of this task can be found in "MyCommand.txt"
 
@@ -6,7 +6,7 @@ The project is composed from various celery tasks in the adaptation python packa
 
 The context dict is the only arg that is passed from task task. It has various helper functions that help computing eg. resources path.
 
-## installation ##
+## Installation ##
 
 ### Celery on Debian ###
 
@@ -17,7 +17,9 @@ sudo pip install celery pymediainfo
 
 follow instructions given at http://celery.readthedocs.org/en/latest/tutorials/daemonizing.html#generic-init-scripts
 
-## Deployment ##
+Note : Maybe does not need to be done
+
+### Deployment ###
 
 To deploy the hv adaptation worker, run the "deploy.sh", if it does not work, use chmod.
 
