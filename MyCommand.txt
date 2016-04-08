@@ -1,1 +1,11 @@
 sudo python -c 'import adaptation.commons ; adaptation.commons.ddo("adaptation/mavideo.mp4","home/utilisateur/Documents/Projet/Resultats",0,500,750,1001,1,700,480,5)'
+
+# "adaptation/mavideo.mp4" corresponds to the original file which will be processed
+# "home/utilisateur/Documents/Projet/Resultats" corresponds to the output folder where will be found the results of the processing
+# 0 is an unused value until now which can be used later to inform the manager of the end of processing of a videos' list
+# 500 corrresponds to the low bitrate, 750 to the medium bitrate and 1001 to the high bitrate
+# All these bitrates will be used to encode the video in different qualities
+# 1 corresponds to the changeFrameRate in the description creator, it means that we are working with frames/GOP (depending of the value)
+# 700 corresponds to the target bitrate, which is not used until now but could be used later iin the creator of descriptions
+# 480 corresponds to the frame height of the descriptions, it will be used to compute the video resolution
+# 5 corresponds to the number of descriptions, this number is used by the creator of descriptions
