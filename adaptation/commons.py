@@ -167,7 +167,7 @@ def encode_workflow(self, src, dest, videoID, inform, lowBitrate, midBitrate, hi
     context = create_description_zip(context)
     context = create_mpd_zip(context)
     clean_useless_folders(context)
-    #context = send_the_videoID(context)
+    context = send_the_videoID(context)
     #context = edit_dash_playlist(context)
     #notify.s(complete=True, main_task_id=main_task_id))
     #if (int(inform) == 1): # If this value is equal to 1 it means that all the videos have been transcoded : the manager is informed
