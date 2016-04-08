@@ -1,6 +1,6 @@
 # encoding_workflow #
 
-The project is composed from various celery tasks in the adaptation python package. One should only call high level task encoding_workflow in the commons.py module.
+The project is composed from various celery tasks in the adaptation python package. One should only call high level task encoding_workflow in the commons.py module. An example of use of this task can be found in "MyCommand.txt"
 
 ## Context ##
 
