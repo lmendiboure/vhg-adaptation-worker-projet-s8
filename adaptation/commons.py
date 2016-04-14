@@ -50,25 +50,25 @@ def compute_quantification_parameters(*args):
 		max_quant = 300
 		in_quant = 250
 	if  500 < bitrate <= 1000:
-		min_quant = 75
+		min_quant = 50
 		max_quant = 100
 		in_quant = 82
 	if  1000 < bitrate <=2000:
-		min_quant = 0
-		max_quant = 25
-		in_quant = 10
-	if 2000 < bitrate <= 3000:
 		min_quant = 25
-		max_quant = 50
-		in_quant = 32
-	if 3000 < bitrate <=4000:
+		max_quant = 75
+		in_quant = 40
+	if 2000 < bitrate <= 3000:
 		min_quant = 10
+		max_quant = 50
+		in_quant = 30
+	if 3000 < bitrate <=4000:
+		min_quant = 5
 		max_quant = 40
 		in_quant = 15
 	if bitrate > 4000:
 		min_quant = 0
 		max_quant = 25
-		in_quant = 2
+		in_quant = 1
 	context={"min_qp": min_quant, "max_qp": max_quant, "in_qp": in_quant}
 	return  context 
 
