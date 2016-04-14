@@ -21,7 +21,12 @@ Note : Maybe does not need to be done
 
 ### Deployment ###
 
-To deploy the hv adaptation worker, run the "deploy.sh", if it does not work, use chmod.
+To deploy the hv adaptation worker, run the "deploy.sh", if it does not work, use chmod:
+
+```bash
+    chmod 777 deploy.sh
+    ./deploy.sh
+```
 
 Once this is done the worker can be used.
 
