@@ -1,4 +1,4 @@
-sudo python -c 'import adaptation.commons ; adaptation.commons.ddo("inputVideo","outputFolder","videoID","listID",lowBitrate,midBitrate,highBitrate,GOP/Frame,targetHeight,numberOfDescription,"managerIP",managerPort,"'managerEndPoint'")'
+#sudo python -c 'import adaptation.commons ; adaptation.commons.ddo("inputVideo","outputFolder","videoID","listID",lowBitrate,midBitrate,highBitrate,GOP/Frame,targetHeight,numberOfDescription,"managerIP",managerPort,"'managerEndPoint'")'
 
 sudo python -c 'import adaptation.commons ; adaptation.commons.ddo("adaptation/mavideo.mp4","home/utilisateur/Documents/Projet/Resultats","11111","",50,1000,4500,51,480,3,"192.168.1.130",8081,"'/api/manager/transco'")'
 
