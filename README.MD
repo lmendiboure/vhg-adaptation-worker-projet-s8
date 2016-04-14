@@ -28,11 +28,25 @@ To deploy the hv adaptation worker, run the "deploy.sh", if it does not work, us
     ./deploy.sh
 ```
 
-Once this is done the worker can be used.
+Once this is done the worker can be used:
+
+```bash
+    ./start.sh
+```
+
+or :
+
+```bash
+    ./start_background.sh
+```
 
 ### Configuration, Run ### 
 
-An example of command to run the code is located in "Mycommand.txt". All the parameters are explained in this file. Choose a video, an output folder and you can launch a task. If it does not work, use chmod.
+An example of command to run the code is located in "Mycommand.txt". All the parameters are explained in this file. Choose a video, an output folder and you can launch a task:
+
+```bash
+    ./MyCommand.txt
+```
 
 Configuration options are in the settings.py file. You can configure the broker url
 
