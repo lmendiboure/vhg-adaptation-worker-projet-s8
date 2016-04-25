@@ -256,8 +256,8 @@ def create_descriptions(*args):
 	#if not os.path.exists(get_plus_description_folder(context)):
         #	os.makedirs(get_plus_description_folder(context))
 
-	args = get_postProcessor_path(context)+" 2 " + get_transcoded_folder(context) + "/" + str(context["lowBitrate"])+".h264 " + get_transcoded_folder(context) + "/" + str(context["highBitrate"])+".h264 " + get_description_folder(context) +" " + str(context["changeFrameRate"]) + " " + str(context["desNum"])
-	#plus_args = get_postProcessor_path(context)+" 3 " + get_transcoded_folder(context) + "/" + str(context["midBitrate"])+".h264 " +  get_transcoded_folder(context) + "/" + str(context["midBitrate"])+".h264 " + get_transcoded_folder(context) + "/" + str(context["highBitrate"])+".h264 " + get_plus_description_folder(context) +" " + str(context["changeFrameRate"]) + " " + str(context["desNum"])
+	args = get_postProcessor_path(context)+" " + get_transcoded_folder(context) + "/" + str(context["lowBitrate"])+".h264 " + get_transcoded_folder(context) + "/" + str(context["highBitrate"])+".h264 " + get_description_folder(context) +" " + str(context["changeFrameRate"]) + " " + str(context["desNum"])
+	#plus_args = get_postProcessor_path(context)+" " + get_transcoded_folder(context) + "/" + str(context["midBitrate"])+".h264 " +  get_transcoded_folder(context) + "/" + str(context["midBitrate"])+".h264 " + get_transcoded_folder(context) + "/" + str(context["highBitrate"])+".h264 " + get_plus_description_folder(context) +" " + str(context["changeFrameRate"]) + " " + str(context["desNum"])
 
 	run_background(args)
 	#run_background(plus_args)	
