@@ -166,7 +166,6 @@ def encode_workflow(self, src, dest,videoID,ListID, lowBitrate, midBitrate, high
     context = chunk_dash(context, segtime=4) #Warning : segtime is already set in transcode.s(), but not in the same context
     context = create_description_zip(context)
     context = create_mpd_zip(context)
-    #clean_useless_folders(context)
     #context = edit_dash_playlist(context)
     #notify.s(complete=True, main_task_id=main_task_id))
     inform_the_storage(context)	
@@ -255,16 +254,17 @@ def create_descriptions(*args):
 	if not os.path.exists(get_description_folder(context)):
         	os.makedirs(get_description_folder(context))
 
-	#if not os.path.exists(get_plus_description_folder(context)):
-        #	os.makedirs(get_plus_description_folder(context))
+	if not os.path.exists(get_plus_description_folder(context)):
+        	os.makedirs(get_plus_description_folder(context))
 
 	args = get_postProcessor_path(context)+" " + get_transcoded_folder(context) + "/" + str(context["lowBitrate"])+".h264 " + get_transcoded_folder(context) + "/" + str(context["highBitrate"])+".h264 " + get_description_folder(context) +" " + str(context["changeFrameRate"]) + " " + str(context["desNum"])
-	#plus_args = get_postProcessor_path(context)+" " + get_transcoded_folder(context) + "/" + str(context["midBitrate"])+".h264 " +  get_transcoded_folder(context) + "/" + str(context["midBitrate"])+".h264 " + get_transcoded_folder(context) + "/" + str(context["highBitrate"])+".h264 " + get_plus_description_folder(context) +" " + str(context["changeFrameRate"]) + " " + str(context["desNum"])
+	plus_args = get_postProcessor_path(context)+" " + get_transcoded_folder(context) + "/" + str(context["midBitrate"])+".h264 " +  get_transcoded_folder(context) + "/" + str(context["midBitrate"])+".h264 " + get_transcoded_folder(context) + "/" + str(context["highBitrate"])+".h264 " + get_plus_description_folder(context) +" " + str(context["changeFrameRate"]) + " " + str(context["desNum"])
 
 	run_background(args)
-	#run_background(plus_args)	
+	run_background(plus_args)	
 	print args
-	#print(plus_args)
+	print(plus_args)
+	shutil.rmtree(get_transcoded_folder(context))
 	return context  
 
 
@@ -276,13 +276,15 @@ def create_mp4_description(*args):
 	while i<= int(context["desNum"]):
 		if not os.path.exists(get_mp4_description_folder(context,i)):
         		os.makedirs(get_mp4_description_folder(context,i))
-		#if not os.path.exists(get_plus_mp4_description_folder(context,i)):
-        	#	os.makedirs(get_plus_mp4_description_folder(context,i))
+		if not os.path.exists(get_plus_mp4_description_folder(context,i)):
+        		os.makedirs(get_plus_mp4_description_folder(context,i))
 		args = "ffmpeg -f h264 -i "+ get_description_folder(context)+"/Description_"+ str(i) +".h264 -vcodec copy " +get_mp4_description_folder(context,i)+"/Description_"+str(i)+".mp4"
-		#plus_args = "ffmpeg -f h264 -i "+ get_plus_description_folder(context)+"/Description_"+ str(i) +".h264 -vcodec copy " +get_plus_mp4_description_folder(context,i)+"/Description_plus_"+str(i)+".mp4"
-		#run_background(plus_args)
+		plus_args = "ffmpeg -f h264 -i "+ get_plus_description_folder(context)+"/Description_"+ str(i) +".h264 -vcodec copy " +get_plus_mp4_description_folder(context,i)+"/Description_plus_"+str(i)+".mp4"
+		run_background(plus_args)
 		run_background(args)
 		i+=1
+	shutil.rmtree(get_description_folder(context))
+	shutil.rmtree(get_plus_description_folder(context))
 	return context
 
 @app.task
@@ -303,8 +305,8 @@ def chunk_dash(*args, **kwargs):
 		if not os.path.exists(get_dash_folder(context,i)):
 			os.makedirs(get_dash_folder(context,i))
 
-		#if not os.path.exists(get_plus_dash_folder(context,i)):
-		#	os.makedirs(get_plus_dash_folder(context,i))
+		if not os.path.exists(get_plus_dash_folder(context,i)):
+			os.makedirs(get_plus_dash_folder(context,i))
 
 		args = "MP4Box -dash " + str(segtime) + "000 -profile live "
 		files_in = [os.path.join(get_mp4_description_folder(context,i), f) for f in os.listdir(get_mp4_description_folder(context,i))]
@@ -312,19 +314,19 @@ def chunk_dash(*args, **kwargs):
 			args += files_in[j] + "#video:id=v" + str(j)
 		args += " -out " + get_dash_mpd_file_path(context,i)
 		print args
-		#plus_args = "MP4Box -dash " + str(segtime) + "000 -profile live "
-		#files_in_plus = [os.path.join(get_plus_mp4_description_folder(context,i), f) for f in os.listdir(get_plus_mp4_description_folder(context,i))]
-		#for j in range(0, len(files_in_plus)):
-		#	plus_args += files_in_plus[j] + "#video:id=v" + str(j)
-		#plus_args += " -out " + get_plus_dash_mpd_file_path(context,i)
-		#print plus_args
+		plus_args = "MP4Box -dash " + str(segtime) + "000 -profile live "
+		files_in_plus = [os.path.join(get_plus_mp4_description_folder(context,i), f) for f in os.listdir(get_plus_mp4_description_folder(context,i))]
+		for j in range(0, len(files_in_plus)):
+			plus_args += files_in_plus[j] + "#video:id=v" + str(j)
+		plus_args += " -out " + get_plus_dash_mpd_file_path(context,i)
+		print plus_args
 		run_background(args)
-		#run_background(plus_args)
+		run_background(plus_args)
 		i +=1
 	k=1
 	while k<=int(context["desNum"]):
 		shutil.move(get_dash_mpd_file_path(context,k),get_dash_mpd_file_folder(context))
-		#shutil.move(get_plus_dash_mpd_file_path(context,k),get_dash_mpd_file_folder(context))   
+		shutil.move(get_plus_dash_mpd_file_path(context,k),get_dash_mpd_file_folder(context))   
 		k+=1
 	return context
 
@@ -333,12 +335,16 @@ def create_description_zip(*args):
 	i = 1;
 	while i<=int(context["desNum"]):
 		zip_file = zipfile.ZipFile(get_description_zip_folder(context,i), 'w', zipfile.ZIP_DEFLATED)
-		#zip_file_plus = zipfile.ZipFile(get_description_plus_zip_folder(context,i), 'w', zipfile.ZIP_DEFLATED)
+		zip_file_plus = zipfile.ZipFile(get_description_plus_zip_folder(context,i), 'w', zipfile.ZIP_DEFLATED)
 	   	files_in = [os.path.join(get_dash_folder(context,i),f) for f in os.listdir(get_dash_folder(context,i))]
-		#files_in_plus = [os.path.join(get_plus_dash_folder(context,i),f) for f in os.listdir(get_plus_dash_folder(context,i))]
+		files_in_plus = [os.path.join(get_plus_dash_folder(context,i),f) for f in os.listdir(get_plus_dash_folder(context,i))]
 		for j in range(0,len(files_in)):
 			zip_file.write(files_in[j],os.path.basename(files_in[j]))
-			#zip_file_plus.write(files_in_plus[j],os.path.basename(files_in_plus[j]))
+			zip_file_plus.write(files_in_plus[j],os.path.basename(files_in_plus[j]))
+		shutil.rmtree(get_mp4_description_folder(context,i))
+		shutil.rmtree(get_dash_folder(context,i))
+		shutil.rmtree(get_plus_mp4_description_folder(context,i))
+		shutil.rmtree(get_plus_dash_folder(context,i))
 		i+=1
 	return context
 
@@ -348,7 +354,7 @@ def create_mpd_zip(*args):
 	files_in = [os.path.join(get_dash_mpd_file_folder(context),f) for f in os.listdir(get_dash_mpd_file_folder(context))]
 	for j in range(0,len(files_in)):
 		zip_file.write(files_in[j],os.path.basename(files_in[j]))
-
+	shutil.rmtree(get_dash_mpd_file_folder(context))
 	return context
 @app.task
 def edit_dash_playlist(*args, **kwards):
@@ -385,7 +391,10 @@ def inform_the_storage(*args):
 	context = args[0]
 	httpServ = httplib.HTTPConnection(context["storageAddr"],context["storagePort"])
 	httpServ.request('GET',context["storageEndpoint"])
-	
+	response = httpServ.getresponse()
+	result = response.status
+	if int(result)<400:
+		clean_useless_folders(context)
 
 @app.task 
 def inform_the_manager(*args):
@@ -403,15 +412,4 @@ def clean_useless_folders(*args):
 	'''
 	# print args, kwargs
 	context = args[0]
-	shutil.rmtree(get_transcoded_folder(context))
-	shutil.rmtree(get_description_folder(context))
-	shutil.rmtree(get_dash_mpd_file_folder(context))
-	#shutil.rmtree(get_plus_description_folder(context))
-	i = 1;
-	while i<=int(context["desNum"]):
-		#shutil.rmtree(get_mp4_description_folder(context,i))
-		shutil.rmtree(get_dash_folder(context,i))
-		#shutil.rmtree(get_plus_mp4_description_folder(context,i))
-		#shutil.rmtree(get_plus_dash_folder(context,i))
-		i +=1
-
+	shutil.rmtree(context["folder_out"])
