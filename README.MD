@@ -122,8 +122,17 @@ Here is a description on how the encoding workflow tasks work. Some long stating
                                                                                     \__________|____________________  \_|
                                                                                         _______|____________
                                                                                         | SEND THE VIDEO ID |
-                                                                                        | TO THE MANAGER    |  
+                                                                                        | TO THE STORAGE    |  
                                                                                         |___________________|
+                                                                                               |
+                                                                                        _______|_____________
+                                                                                        |   IF IT IS THE END |
+                                                                                        |   END OF A LIST    |
+                                                                                        |   THE LIST ID IS   |
+                                                                                        |   SENT TO THE      |
+                                                                                        |   MANAGER          |
+                                                                                        |____________________|
+                                                                                               |    
                                                                                         _______|_________________
                                                                                         | DELETE USELESS FOLDERS |
                                                                                         |________________________|
