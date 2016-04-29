@@ -1,6 +1,6 @@
-#sudo python -c 'import adaptation.commons ; adaptation.commons.ddo("inputVideo","outputFolder","videoID","listID",lowBitrate,midBitrate,highBitrate,GOP/Frame,targetHeight,numberOfDescription,"managerIP",managerPort,"'managerEndPoint'")'
+#sudo python -c 'import adaptation.commons ; adaptation.commons.ddo("inputVideo","outputFolder","videoID","listID",lowBitrate,midBitrate,highBitrate,GOP/Frame,targetHeight,numberOfDescription,"managerIP",managerPort,"'managerEndPoint'","storageIP",storagePort,"'storageEndPoint'")'
 
-sudo python -c 'import adaptation.commons ; adaptation.commons.ddo("adaptation/mavideo.mp4","home/utilisateur/Documents/Projet/Resultats","11111","",50,1000,4500,51,480,3,"192.168.1.130",8081,"'/api/manager/transco'")'
+sudo python -c 'import adaptation.commons ; adaptation.commons.ddo("adaptation/mavideo.mp4","home/utilisateur/Documents/Projet/Resultats","11111","",50,1000,4500,51,480,3,"192.168.1.130",8081,"'/api/manager/transco'","192.168.1.130",8086,"'/api/storage/transcoding)'
 
 # "adaptation/mavideo.mp4" corresponds to the original file which will be processed
 # "home/utilisateur/Documents/Projet/Resultats" corresponds to the output folder where will be found the results of the processing
@@ -11,7 +11,9 @@ sudo python -c 'import adaptation.commons ; adaptation.commons.ddo("adaptation/m
 # 51 corresponds to the changeFrameRate in the description creator, it means that we are working with frames/GOP (depending of the value), here it is GOP
 # 480 corresponds to the frame height of the descriptions, it will be used to compute the video resolution
 # 5 corresponds to the number of descriptions, this number is used by the creator of descriptions
-# "127.0.0.1" corresponds to the address of the manager, he will be informed at the end of the transcoding of a video
+# "192.168.1.130" corresponds to the address of the manager, he will be informed at the end of the transcoding of a videos list
 # 8081 corresponds to the port of the manager
 # "api/manager/transco" corresponds to the End Point of the manager
-
+# "192.168.1.130" corresponds to the address of the storage, he will be informed at the end of the transcoding of a video
+# 8086 corresponds to the port of the storage
+# "api/storage/transcoding" corresponds to the End Point of the storage
