@@ -1,7 +1,7 @@
 __author__ = 'nherbaut'
 import subprocess
 import math
-import os
+import os 
 import tempfile
 import urllib
 import shutil
@@ -137,9 +137,9 @@ def image_processing(src, dest):
 
 
 @app.task()
-def ddo(src, dest, videoID,ListID, lowBitrate,midBitrate, highBitrate, changeFrameRate, resolution, desNum,managerAddr,managerPort,managerEndpoint):
+def ddo(src, dest, videoID,ListID, lowBitrate,midBitrate, highBitrate, changeFrameRate, resolution, desNum,managerAddr,managerPort,managerEndpoint,storageAddr,storagePort,storageEndpoint):
     try:
-        encode_workflow(src, dest, videoID, ListID, lowBitrate, midBitrate, highBitrate, changeFrameRate, resolution, desNum,managerAddr,managerPort,managerEndpoint)
+        encode_workflow(src, dest, videoID, ListID, lowBitrate, midBitrate, highBitrate, changeFrameRate, resolution, desNum,managerAddr,managerPort,managerEndpoint,storageAddr,storagePort,storageEndpoint)
     except:
         print "Error while encoding_workflow"
         raise
@@ -147,12 +147,13 @@ def ddo(src, dest, videoID,ListID, lowBitrate,midBitrate, highBitrate, changeFra
 
 
 @app.task(bind=True)
-def encode_workflow(self, src, dest,videoID,ListID, lowBitrate, midBitrate, highBitrate, changeFrameRate, resolution, desNum,managerAddr,managerPort,managerEndpoint):
+def encode_workflow(self, src, dest,videoID,ListID, lowBitrate, midBitrate, highBitrate, changeFrameRate, resolution, desNum,managerAddr,managerPort,managerEndpoint,storageAddr,storagePort,storageEndpoint):
     main_task_id = self.request.id
     print "(------------"
     print main_task_id
     random_uuid = uuid.uuid4().hex
-    context={"original_file": src, "folder_out":config["folder_out"]+ dest, "videoID":videoID, "ListID":ListID, "id": random_uuid, "bitrateList":{lowBitrate,midBitrate,highBitrate}, "lowBitrate":lowBitrate,"midBitrate":midBitrate,"highBitrate":highBitrate, "resolution":resolution, "desNum": desNum, "changeFrameRate":changeFrameRate,"managerAddr":managerAddr,"managerPort":managerPort,"managerEndpoint":managerEndpoint}
+    context={"original_file": src, "folder_out":config["folder_out"]+ dest, "videoID":videoID, "ListID":ListID, "id": random_uuid, "bitrateList":{lowBitrate,midBitrate,highBitrate}, "lowBitrate":lowBitrate,"midBitrate":midBitrate,"highBitrate":highBitrate, "resolution":resolution, "desNum": desNum, "changeFrameRate":changeFrameRate,"managerAddr":managerAddr,"managerPort":managerPort,"managerEndpoint":managerEndpoint,
+"storageAddr":storageAddr,"storagePort":storagePort,"storageEndpoint":storageEndpoint}
     if os.path.exists(context['folder_out']):
     	shutil.rmtree(context["folder_out"])
     context = get_video_size(context=context)
@@ -168,6 +169,7 @@ def encode_workflow(self, src, dest,videoID,ListID, lowBitrate, midBitrate, high
     #clean_useless_folders(context)
     #context = edit_dash_playlist(context)
     #notify.s(complete=True, main_task_id=main_task_id))
+    inform_the_storage(context)	
     if (ListID != ""): # If this value is not equal to "" it means that all the videos of the list have been transcoded : the list ID is sent to the manager
     	inform_the_manager(context)
 
@@ -257,7 +259,7 @@ def create_descriptions(*args):
         #	os.makedirs(get_plus_description_folder(context))
 
 	args = get_postProcessor_path(context)+" " + get_transcoded_folder(context) + "/" + str(context["lowBitrate"])+".h264 " + get_transcoded_folder(context) + "/" + str(context["highBitrate"])+".h264 " + get_description_folder(context) +" " + str(context["changeFrameRate"]) + " " + str(context["desNum"])
-	#plus_args = get_postProcessor_path(context)+" " + get_transcoded_folder(context) + "/" + str(context["midBitrate"])+".h264 " +  get_transcoded_folder(context) + "/" + str(context["midBitrate"])+".h264 " + get_transcoded_folder(context) + "/" + str(context["highBitrate"])+".h264 " + get_plus_description_folder(context) +" " + str(context["changeFrameRate"]) + " " + str(context["desNum"])
+	#plus_args = get_postProcessor_path(context)+" 3 " + get_transcoded_folder(context) + "/" + str(context["midBitrate"])+".h264 " +  get_transcoded_folder(context) + "/" + str(context["midBitrate"])+".h264 " + get_transcoded_folder(context) + "/" + str(context["highBitrate"])+".h264 " + get_plus_description_folder(context) +" " + str(context["changeFrameRate"]) + " " + str(context["desNum"])
 
 	run_background(args)
 	#run_background(plus_args)	
@@ -379,11 +381,18 @@ def edit_dash_playlist(*args, **kwards):
     return context
 
 @app.task 
+def inform_the_storage(*args):
+	context = args[0]
+	httpServ = httplib.HTTPConnection(context["storageAddr"],context["storagePort"])
+	httpServ.request('GET',context["storageEndpoint"])
+	
+
+@app.task 
 def inform_the_manager(*args):
 	context = args[0]
-	httpServ = httplib.HTTPConnection("192.168.1.130",8081 )
+	httpServ = httplib.HTTPConnection(context["managerAddr"],context["managerPort"])
 	httpServ.connect()
-	httpServ.request('POST', '/api/manager/transco', context["ListID"])
+	httpServ.request('POST', context["managerEndpoint"], context["ListID"])
 
 
 @app.task
