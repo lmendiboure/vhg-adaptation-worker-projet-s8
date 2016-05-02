@@ -32,10 +32,10 @@ def get_dash_folder(context,number):
     return os.path.join(context["folder_out"], "dash_description_"+str(number))
 
 def get_description_zip_folder(context,number):
-    return os.path.join(context["folder_out"], "zip_dash_description_"+str(number)+".zip")
+    return os.path.join(context["folder_out"], "zip_dash_description_"+context["videoID"]+"_"+str(number)+".zip")
 
 def get_description_plus_zip_folder(context,number):
-    return os.path.join(context["folder_out"], "zip_plus_dash_description_"+str(number)+".zip")
+    return os.path.join(context["folder_out"], "zip_plus_dash_description_"+context["videoID"]+"_"+str(number)+".zip")
 
 def get_mpd_zip_folder(context):
     return os.path.join(context["folder_out"],context["videoID"]+".zip")
