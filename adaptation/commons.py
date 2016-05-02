@@ -2,14 +2,15 @@ __author__ = 'nherbaut'
 import subprocess
 import math
 import os 
+import re
 import tempfile
-import urllib
 import shutil
 import uuid
 import sys
 import zipfile
-import httplib
 import requests
+import subprocess
+import unirest
 
 # Need to be changed, add the adaptation folder directory to the system path
 sys.path.append(os.path.abspath("adaptation"))
@@ -137,9 +138,9 @@ def image_processing(src, dest):
 
 
 @app.task()
-def ddo(src, dest, videoID,ListID, lowBitrate,midBitrate, highBitrate, changeFrameRate, resolution, desNum,managerAddr,managerPort,managerEndpoint,storageAddr,storagePort,storageEndpoint):
+def ddo(src, dest, videoID,ListID, lowBitrate,midBitrate, highBitrate, changeFrameRate, resolution, desNum,managerAddr,storageAddr,transcodingAddr):
     try:
-        encode_workflow(src, dest, videoID, ListID, lowBitrate, midBitrate, highBitrate, changeFrameRate, resolution, desNum,managerAddr,managerPort,managerEndpoint,storageAddr,storagePort,storageEndpoint)
+        encode_workflow(src, dest, videoID, ListID, lowBitrate, midBitrate, highBitrate, changeFrameRate, resolution, desNum,managerAddr,storageAddr,transcodingAddr)
     except:
         print "Error while encoding_workflow"
         raise
@@ -147,25 +148,25 @@ def ddo(src, dest, videoID,ListID, lowBitrate,midBitrate, highBitrate, changeFra
 
 
 @app.task(bind=True)
-def encode_workflow(self, src, dest,videoID,ListID, lowBitrate, midBitrate, highBitrate, changeFrameRate, resolution, desNum,managerAddr,managerPort,managerEndpoint,storageAddr,storagePort,storageEndpoint):
+def encode_workflow(self, src, dest,videoID,ListID, lowBitrate, midBitrate, highBitrate, changeFrameRate, resolution, desNum,managerAddr,storageAddr,transcodingAddr):
     main_task_id = self.request.id
     print "(------------"
     print main_task_id
     random_uuid = uuid.uuid4().hex
-    context={"original_file": src, "folder_out":config["folder_out"]+ dest, "videoID":videoID, "ListID":ListID, "id": random_uuid, "bitrateList":{lowBitrate,midBitrate,highBitrate}, "lowBitrate":lowBitrate,"midBitrate":midBitrate,"highBitrate":highBitrate, "resolution":resolution, "desNum": desNum, "changeFrameRate":changeFrameRate,"managerAddr":managerAddr,"managerPort":managerPort,"managerEndpoint":managerEndpoint,
-"storageAddr":storageAddr,"storagePort":storagePort,"storageEndpoint":storageEndpoint}
+    context={"original_file": src, "folder_out":config["folder_out"]+ dest, "videoID":videoID, "ListID":ListID, "id": random_uuid, "bitrateList":{lowBitrate,midBitrate,highBitrate}, "lowBitrate":lowBitrate,"midBitrate":midBitrate,"highBitrate":highBitrate, "resolution":resolution, "desNum": desNum, "changeFrameRate":changeFrameRate,"managerAddr":managerAddr,"storageAddr":storageAddr,"transcodingAddr":transcodingAddr}
     if os.path.exists(context['folder_out']):
     	shutil.rmtree(context["folder_out"])
     context = get_video_size(context=context)
-    context = get_video_thumbnail(context)
-    context = create_yuv_file(context)
-    context = compute_target_size(context, target_height=resolution)
-    context = transcode(context)
-    context = create_descriptions(context)
-    context = create_mp4_description(context)
-    context = chunk_dash(context, segtime=4) #Warning : segtime is already set in transcode.s(), but not in the same context
-    context = create_description_zip(context)
-    context = create_mpd_zip(context)
+    context = get_video_length(context)
+    #context = get_video_thumbnail(context)
+    #context = create_yuv_file(context)
+    #context = compute_target_size(context, target_height=resolution)
+    #context = transcode(context)
+    #context = create_descriptions(context)
+    #context = create_mp4_description(context)
+    #context = chunk_dash(context, segtime=4) #Warning : segtime is already set in transcode.s(), but not in the same context
+    #context = create_description_zip(context)
+    #context = create_mpd_zip(context)
     #context = edit_dash_playlist(context)
     #notify.s(complete=True, main_task_id=main_task_id))
     inform_the_storage(context)	
@@ -188,6 +189,26 @@ def get_video_size(*args, **kwargs):
             context["track_height"] = track.height
             return context
     raise AssertionError("failed to read video info from " + context["original_file"])
+
+@app.task
+def get_video_length(*args,**kwargs):
+	context = args[0]
+	tmpf = tempfile.NamedTemporaryFile()
+	os.system("ffmpeg -i \"%s\" 2> %s" % (context["original_file"], tmpf.name))
+	lines = tmpf.readlines()
+	tmpf.close()	
+	result = {}
+	for l in lines:
+		l = l.strip()
+		if l.startswith('Duration'):
+			result = re.search('Duration: (.*?),', l).group(0).split(':',1)[1].strip(' ,')
+			result = result.split(":")
+	length = int(result[0])*3600 + int(result[1])*60 + float(result[2])
+	length = math.ceil(length)
+	length = int(length)
+	length = str(length)
+	response = unirest.post(context["transcodingAddr"]+context["videoID"], params = length)
+	return context
 
 @app.task
 # def compute_target_size(original_height, original_width, target_height):
@@ -389,20 +410,15 @@ def edit_dash_playlist(*args, **kwards):
 @app.task 
 def inform_the_storage(*args):
 	context = args[0]
-	httpServ = httplib.HTTPConnection(context["storageAddr"],context["storagePort"])
-	httpServ.request('GET',context["storageEndpoint"])
-	response = httpServ.getresponse()
-	result = response.status
+	response = unirest.get(context["storageAddr"]+context["videoID"])
+	result = response.code
 	if int(result)<400:
 		clean_useless_folders(context)
 
 @app.task 
 def inform_the_manager(*args):
 	context = args[0]
-	httpServ = httplib.HTTPConnection(context["managerAddr"],context["managerPort"])
-	httpServ.connect()
-	httpServ.request('POST', context["managerEndpoint"], context["ListID"])
-
+	response = unirest.post(context["managerAddr"], params = context["ListID"])
 
 @app.task
 # def add_playlist_footer(playlist_folder):
