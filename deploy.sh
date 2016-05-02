@@ -3,7 +3,7 @@
 
 #Install RabbitMQ for Celery, Then Celery and MediaInfo wrapper for python
 sudo apt-get -y install rabbitmq-server python-pip mediainfo python-lxml python-dev wget yasm nasm
-sudo pip install celery pymediainfo
+sudo pip install celery pymediainfo unirest
 
 #Compile Manually MP4Box from GPAC project
 chmod 777 compile_MP4Box.sh
