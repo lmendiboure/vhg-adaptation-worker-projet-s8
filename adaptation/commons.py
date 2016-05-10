@@ -43,7 +43,7 @@ def run_background(*args):
     except subprocess.CalledProcessError:
         print "Error"
 
-
+@app.task
 def compute_quantification_parameters(*args):
 	bitrate = args[0]
 	if bitrate <= 500:
@@ -172,7 +172,7 @@ def encode_workflow(self, src, dest,videoID,ListID, lowBitrate, midBitrate, high
     inform_the_storage(context)	
     if (ListID != ""): # If this value is not equal to "" it means that all the videos of the list have been transcoded : the list ID is sent to the manager
     	inform_the_manager(context)
-
+    print "Trancoding of " + str(videoID) + " done"
 @app.task
 # def get_video_size(input_file):
 def get_video_size(*args, **kwargs):
@@ -351,6 +351,7 @@ def chunk_dash(*args, **kwargs):
 		k+=1
 	return context
 
+@app.task
 def create_description_zip(*args):
 	context = args[0]	
 	i = 1;
@@ -369,6 +370,7 @@ def create_description_zip(*args):
 		i+=1
 	return context
 
+@app.task
 def create_mpd_zip(*args):
 	context = args[0]
 	zip_file = zipfile.ZipFile(get_mpd_zip_folder(context), 'w', zipfile.ZIP_DEFLATED)
@@ -412,14 +414,14 @@ def inform_the_storage(*args):
 	context = args[0]
 	response = unirest.get(context["storageAddr"]+context["videoID"])
 	result = response.code
-	if int(result)<400:
-		clean_useless_folders(context)
-
+	#if int(result)<400:
+	#	clean_useless_folders(context)
+	print "storage response : " + str(result)
 @app.task 
 def inform_the_manager(*args):
 	context = args[0]
 	response = unirest.post(context["managerAddr"], params = context["ListID"])
-
+	print "manager response : " + str(response.code)
 @app.task
 # def add_playlist_footer(playlist_folder):
 def clean_useless_folders(*args):
