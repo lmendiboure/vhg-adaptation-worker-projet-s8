@@ -1,14 +1,11 @@
 __author__ = 'nherbaut'
 import os
 
-
-
 def get_transcoded_file(context,bitrate):
     return os.path.join(get_transcoded_folder(context), str(bitrate) + ".h264")
 
 def get_yuv_file(context):
     return os.path.join(get_transcoded_folder(context),"decoded_file.yuv")
-
 
 def get_transcoded_folder(context):
     return os.path.join(context["folder_out"], "encoding")
@@ -33,9 +30,6 @@ def get_dash_folder(context,number):
 
 def get_description_zip_folder(context,number):
     return os.path.join(context["folder_out"], "zip_dash_description_"+context["videoID"]+"_"+str(number)+".zip")
-
-def get_description_plus_zip_folder(context,number):
-    return os.path.join(context["folder_out"], "zip_plus_dash_description_"+context["videoID"]+"_"+str(number)+".zip")
 
 def get_mpd_zip_folder(context):
     return os.path.join(context["folder_out"],context["videoID"]+".zip")
