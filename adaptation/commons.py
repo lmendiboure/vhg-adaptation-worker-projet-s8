@@ -28,7 +28,7 @@ from pymediainfo import MediaInfo
 from lxml import etree as LXML
 
 # context helpers
-from context import get_transcoded_folder, get_transcoded_file, get_dash_folder, get_dash_mpd_file_path, get_yuv_file, get_description_folder, get_mp4_description_folder, get_description_zip_folder, get_dash_mpd_file_folder, get_postProcessor_path,get_welsenc_path,get_layer_path, get_plus_description_folder,get_plus_mp4_description_folder, get_plus_dash_folder, get_plus_dash_mpd_file_path, get_description_plus_zip_folder, get_mpd_zip_folder
+from context import get_transcoded_folder, get_transcoded_file, get_dash_folder, get_dash_mpd_file_path, get_yuv_file, get_description_folder, get_mp4_description_folder, get_description_zip_folder, get_dash_mpd_file_folder, get_postProcessor_path,get_welsenc_path,get_layer_path, get_plus_description_folder,get_plus_mp4_description_folder, get_plus_dash_folder, get_plus_dash_mpd_file_path, get_mpd_zip_folder
 
 # main app for celery, configuration is in separate settings.ini file
 app = Celery('tasks')
@@ -292,6 +292,7 @@ def create_descriptions(*args):
 @app.task
 def create_mp4_description(*args):
 	i =1
+	j = 1
 	context = args[0]
 	
 	while i<= int(context["desNum"]):
@@ -299,11 +300,12 @@ def create_mp4_description(*args):
         		os.makedirs(get_mp4_description_folder(context,i))
 		if not os.path.exists(get_plus_mp4_description_folder(context,i)):
         		os.makedirs(get_plus_mp4_description_folder(context,i))
-		args = "ffmpeg -f h264 -i "+ get_description_folder(context)+"/Description_"+ str(i) +".h264 -vcodec copy " +get_mp4_description_folder(context,i)+"/Description_"+str(i)+".mp4"
-		plus_args = "ffmpeg -f h264 -i "+ get_plus_description_folder(context)+"/Description_"+ str(i) +".h264 -vcodec copy " +get_plus_mp4_description_folder(context,i)+"/Description_plus_"+str(i)+".mp4"
+		args = "ffmpeg -f h264 -i "+ get_description_folder(context)+"/Description_"+ str(i) +".h264 -vcodec copy " +get_mp4_description_folder(context,i)+"/Description_"+context["videoID"]+"_"+str(j)+".mp4"
+		plus_args = "ffmpeg -f h264 -i "+ get_plus_description_folder(context)+"/Description_"+ str(i) +".h264 -vcodec copy " +get_plus_mp4_description_folder(context,i)+"/Description_"+context["videoID"]+"_"+str(j+1)+".mp4"
 		run_background(plus_args)
 		run_background(args)
 		i+=1
+		j+=2
 	shutil.rmtree(get_description_folder(context))
 	shutil.rmtree(get_plus_description_folder(context))
 	return context
@@ -355,9 +357,10 @@ def chunk_dash(*args, **kwargs):
 def create_description_zip(*args):
 	context = args[0]	
 	i = 1;
+	k = 1;
 	while i<=int(context["desNum"]):
-		zip_file = zipfile.ZipFile(get_description_zip_folder(context,i), 'w', zipfile.ZIP_DEFLATED)
-		zip_file_plus = zipfile.ZipFile(get_description_plus_zip_folder(context,i), 'w', zipfile.ZIP_DEFLATED)
+		zip_file = zipfile.ZipFile(get_description_zip_folder(context,k), 'w', zipfile.ZIP_DEFLATED)
+		zip_file_plus = zipfile.ZipFile(get_description_zip_folder(context,k+1), 'w', zipfile.ZIP_DEFLATED)
 	   	files_in = [os.path.join(get_dash_folder(context,i),f) for f in os.listdir(get_dash_folder(context,i))]
 		files_in_plus = [os.path.join(get_plus_dash_folder(context,i),f) for f in os.listdir(get_plus_dash_folder(context,i))]
 		for j in range(0,len(files_in)):
@@ -368,6 +371,7 @@ def create_description_zip(*args):
 		shutil.rmtree(get_plus_mp4_description_folder(context,i))
 		shutil.rmtree(get_plus_dash_folder(context,i))
 		i+=1
+		k +=2
 	return context
 
 @app.task
@@ -412,6 +416,7 @@ def edit_dash_playlist(*args, **kwards):
 @app.task 
 def inform_the_storage(*args):
 	context = args[0]
+	unirest.timeout(60)
 	response = unirest.get(context["storageAddr"]+context["videoID"])
 	result = response.code
 	#if int(result)<400:
